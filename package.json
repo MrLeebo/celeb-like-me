@@ -30,12 +30,15 @@
     "@prisma/cli": "2.0.0-beta.3",
     "@prisma/client": "2.0.0-beta.3",
     "blitz": "latest",
+    "clarifai": "2.9.1",
+    "got": "11.0.2",
     "react": "experimental",
     "react-dom": "experimental",
     "typescript": "3.8.3"
   },
   "NOTE": "Next.js dependency is currently only required for deploying to zeit",
   "devDependencies": {
+    "@fullhuman/postcss-purgecss": "2.1.2",
     "@types/react": "16.9.34",
     "@typescript-eslint/eslint-plugin": "2.30.0",
     "@typescript-eslint/parser": "2.30.0",
@@ -50,8 +53,10 @@
     "husky": "4.2.5",
     "lint-staged": "10.1.7",
     "next": "9.3.5",
+    "postcss-preset-env": "6.7.0",
     "prettier": "2.0.5",
-    "pretty-quick": "2.0.1"
+    "pretty-quick": "2.0.1",
+    "tailwindcss": "1.3.5"
   },
   "private": true
 }

@@ -1,207 +1,128 @@
-import { Head, Link } from "blitz"
+import { useQuery, Head } from "blitz"
+import recent from "app/queries/recent"
+import predict from "app/queries/predict"
+import { useState } from "react"
 
-const Home = () => (
-  <div className="container">
-    <Head>
-      <title>celeb-like-me</title>
-      <link rel="icon" href="/favicon.ico" />
-    </Head>
+export default function Home() {
+  const [url, setUrl] = useState("https://avatars3.githubusercontent.com/u/8813276?v=4")
+  const [results, setResults] = useState()
+  const [error, setError] = useState(null)
 
-    <main>
-      <div className="logo">
-        <img src="/logo.png" alt="blitz.js" />
+  const [recents, { refetch }] = useQuery(recent)
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+
+    try {
+      const res = await predict({ data: { url: e.target.url.value } })
+      refetch()
+      setResults(res as any)
+    } catch (err) {
+      setError(err)
+    }
+  }
+
+  return (
+    <div className="w-full max-w-4xl mx-auto space-y-4">
+      <Head>
+        <title>celeb-like-me</title>
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+
+      <form id="main" onSubmit={handleSubmit} className="space-y-4">
+        <div className="flex">
+          <div className="flex-grow">
+            {error && <span className="text-red-600">{error.message}</span>}
+
+            <label htmlFor="url" className={classes.label}>
+              Picture URL
+            </label>
+
+            <div className={classes.formGroup}>
+              <input
+                id="url"
+                name="url"
+                type="text"
+                className={classes.input}
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                onBlur={(e) => setUrl(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+        <button key="predict" className={`max-w-xs ${classes.button}`}>
+          Predict
+        </button>
+      </form>
+
+      <div className="flex justify-around">
+        <div className="w-2/5">
+          <img src={url} alt="Preview" className={classes.img} />
+        </div>
+
+        <div className="w-2/5">
+          {results && (
+            <>
+              <PredictionResults data={results} />
+            </>
+          )}
+        </div>
       </div>
-      <p>
-        1. Add this code to <strong>db/schema.prisma</strong>:
-      </p>
-      <pre>
-        <code>
-          {`model Project {
-  id      Int      @default(autoincrement()) @id
-  name    String
-}`}
-        </code>
-      </pre>
-      <p>2. Run these commands in your terminal:</p>
-      <pre>
-        <code>
-          {`$ blitz db migrate
-$ blitz generate all project`}
-        </code>
-      </pre>
 
-      <p>
-        3. Go to{" "}
-        <Link href="/projects">
-          <a>/projects</a>
-        </Link>
-      </p>
-      <div className="buttons">
-        <a
-          className="button"
-          href="https://github.com/blitz-js/blitz/blob/master/USER_GUIDE.md?utm_source=blitz-new&utm_medium=app-template&utm_campaign=blitz-new"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Documentation
-        </a>
-        <a
-          className="button-outline"
-          href="https://github.com/blitz-js/blitz"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Github Repo
-        </a>
-        <a
-          className="button-outline"
-          href="https://slack.blitzjs.com"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Slack Community
-        </a>
+      <div>
+        <h2>Recent Searches</h2>
+        {recents.map((recent) => (
+          <div>
+            <button
+              className="underline hover:text-gray-500"
+              onClick={() => {
+                setUrl(recent.url)
+                setResults(null)
+              }}
+            >
+              {recent.url}
+            </button>
+          </div>
+        ))}
       </div>
-    </main>
 
-    <footer>
-      <a
-        href="https://blitzjs.com?utm_source=blitz-new&utm_medium=app-template&utm_campaign=blitz-new"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        Powered by Blitz.js
-      </a>
-    </footer>
+      <footer className="mt-8">
+        <a href="https://github.com/MrLeebo/celeb-like-me" target="_blank" rel="noopener noreferrer">
+          View Source Code
+        </a>
+        {" | "}
+        <a
+          href="https://blitzjs.com?utm_source=blitz-new&utm_medium=app-template&utm_campaign=blitz-new"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Powered by Blitz.js
+        </a>
+      </footer>
+    </div>
+  )
+}
 
-    <style jsx>{`
-      .container {
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-      }
+const classes = {
+  label: "block text-sm leading-5 font-medium text-gray-700",
+  formGroup: "mt-1 relative border border-gray-300 rounded-md shadow-sm",
+  input: "form-input block w-full pl-7 pr-12 sm:text-sm sm:leading-5",
+  img: "rounded-md w-full object-cover",
+  button:
+    "w-full flex items-center justify-center px-8 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-500 focus:outline-none focus:shadow-outline transition duration-150 ease-in-out md:py-4 md:text-lg md:px-10",
+}
 
-      main {
-        padding: 5rem 0;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-      }
+const PredictionResults = ({ data }) => {
+  if (data.error) return data.error
 
-      main p {
-        font-size: 1.2rem;
-      }
-
-      footer {
-        width: 100%;
-        height: 60px;
-        border-top: 1px solid #eaeaea;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background-color: #45009d;
-      }
-
-      footer a {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-      }
-
-      footer a {
-        color: #f4f4f4;
-        text-decoration: none;
-      }
-
-      .logo {
-        margin-bottom: 2rem;
-      }
-
-      .logo img {
-        width: 300px;
-      }
-
-      .buttons {
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
-        grid-gap: 0.5rem;
-        margin-top: 6rem;
-      }
-
-      a.button {
-        background-color: #6700eb;
-        padding: 1rem 2rem;
-        color: #f4f4f4;
-        text-align: center;
-      }
-
-      a.button:hover {
-        background-color: #45009d;
-      }
-
-      a.button-outline {
-        border: 2px solid #6700eb;
-        padding: 1rem 2rem;
-        color: #6700eb;
-        text-align: center;
-      }
-
-      a.button-outline:hover {
-        border-color: #45009d;
-        color: #45009d;
-      }
-
-      pre {
-        background: #fafafa;
-        border-radius: 5px;
-        padding: 0.75rem;
-      }
-      code {
-        font-size: 0.9rem;
-        font-family: Menlo, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono,
-          Bitstream Vera Sans Mono, Courier New, monospace;
-      }
-
-      .grid {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-wrap: wrap;
-
-        max-width: 800px;
-        margin-top: 3rem;
-      }
-
-      @media (max-width: 600px) {
-        .grid {
-          width: 100%;
-          flex-direction: column;
-        }
-      }
-    `}</style>
-
-    <style jsx global>{`
-      @import url("https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@300;700&display=swap");
-
-      html,
-      body {
-        padding: 0;
-        margin: 0;
-        font-family: "Libre Franklin", -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu,
-          Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
-      }
-
-      * {
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        box-sizing: border-box;
-      }
-    `}</style>
-  </div>
-)
-
-export default Home
+  return (
+    <div className="grid grid-col-3">
+      {data.result.matches.map((match) => (
+        <div className="capitalize">
+          {match.name} ({(match.value * 100).toFixed(2)}%)
+        </div>
+      ))}
+    </div>
+  )
+}
