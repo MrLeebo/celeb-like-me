@@ -1,128 +1,149 @@
+import { useState } from "react"
 import { useQuery, Head } from "blitz"
 import recent from "app/queries/recent"
 import predict from "app/queries/predict"
-import { useState } from "react"
+import lookup from "app/queries/lookup"
 
 export default function Home() {
-  const [url, setUrl] = useState("https://avatars3.githubusercontent.com/u/8813276?v=4")
+  const [image, setImage] = useState<any>()
   const [results, setResults] = useState()
   const [error, setError] = useState(null)
 
   const [recents, { refetch }] = useQuery(recent)
 
+  async function imageChanged(newImg) {
+    setResults(null)
+    const res = await predict({ where: { id: newImg.id } })
+    setResults(res as any)
+    refetch()
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
 
     try {
-      const res = await predict({ data: { url: e.target.url.value } })
-      refetch()
-      setResults(res as any)
+      const res = await lookup({ username: e.target.username.value })
+      setImage(res as any)
+      imageChanged(res)
     } catch (err) {
       setError(err)
     }
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-4">
+    <div className="min-h-screen w-full max-w-4xl mx-auto flex flex-col justify-between">
       <Head>
         <title>celeb-like-me</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <form id="main" onSubmit={handleSubmit} className="space-y-4">
-        <div className="flex">
-          <div className="flex-grow">
-            {error && <span className="text-red-600">{error.message}</span>}
+      <div>
+        <form id="main" onSubmit={handleSubmit} className="space-y-4 mb-8">
+          <div className="flex">
+            <div className="flex-grow">
+              {error && <span className="text-red-600">{error.message}</span>}
 
-            <label htmlFor="url" className={classes.label}>
-              Picture URL
-            </label>
+              <label htmlFor="username" className="block text-sm leading-5 font-medium text-gray-700">
+                GitHub Username
+              </label>
 
-            <div className={classes.formGroup}>
-              <input
-                id="url"
-                name="url"
-                type="text"
-                className={classes.input}
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                onBlur={(e) => setUrl(e.target.value)}
-              />
+              <div className="mt-1 relative border border-gray-300 rounded shadow-md overflow-hidden">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 sm:text-sm sm:leading-5">@</span>
+                </div>
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  className="form-input block w-full pl-8 pr-12 sm:text-sm sm:leading-5"
+                  placeholder="Your GitHub Username"
+                  autoComplete="none"
+                  data-lpignore="true"
+                  required
+                />
+                <div>
+                  <button
+                    key="lookup"
+                    className="absolute px-1 right-0 top-0 sm:text-sm sm:leading-5 border border-transparent text-gray-800 hover:bg-gray-300"
+                  >
+                    Lookup
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-        <button key="predict" className={`max-w-xs ${classes.button}`}>
-          Predict
-        </button>
-      </form>
+        </form>
 
-      <div className="flex justify-around">
-        <div className="w-2/5">
-          <img src={url} alt="Preview" className={classes.img} />
-        </div>
+        <div className="flex justify-around">
+          <div className="w-2/5">
+            {image && <img src={image.url} alt="Preview" className="rounded-md w-full object-cover" />}
+          </div>
 
-        <div className="w-2/5">
-          {results && (
-            <>
-              <PredictionResults data={results} />
-            </>
-          )}
+          <div className="w-2/5">{results && <PredictionResults data={results} />}</div>
         </div>
       </div>
 
       <div>
-        <h2>Recent Searches</h2>
-        {recents.map((recent) => (
-          <div>
-            <button
-              className="underline hover:text-gray-500"
-              onClick={() => {
-                setUrl(recent.url)
-                setResults(null)
-              }}
-            >
-              {recent.url}
-            </button>
+        <div>
+          <h2>Recent Searches</h2>
+          <div className="flex flex-wrap">
+            {recents.map((recent) => (
+              <div key={recent.id} className="m-2">
+                <button
+                  className="underline hover:text-gray-500"
+                  onClick={() => {
+                    setImage(recent)
+                    imageChanged(recent)
+                  }}
+                >
+                  {recent.username || recent.url}
+                </button>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
 
-      <footer className="mt-8">
-        <a href="https://github.com/MrLeebo/celeb-like-me" target="_blank" rel="noopener noreferrer">
-          View Source Code
-        </a>
-        {" | "}
-        <a
-          href="https://blitzjs.com?utm_source=blitz-new&utm_medium=app-template&utm_campaign=blitz-new"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by Blitz.js
-        </a>
-      </footer>
+        <footer className="mt-8">
+          <a
+            href="https://github.com/MrLeebo/celeb-like-me"
+            className="hover:text-gray-500"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            View Source Code
+          </a>
+          {" | "}
+          <a
+            href="https://blitzjs.com?utm_source=blitz-new&utm_medium=app-template&utm_campaign=blitz-new"
+            className="hover:text-gray-500"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Powered by Blitz.js
+          </a>
+        </footer>
+      </div>
     </div>
   )
-}
-
-const classes = {
-  label: "block text-sm leading-5 font-medium text-gray-700",
-  formGroup: "mt-1 relative border border-gray-300 rounded-md shadow-sm",
-  input: "form-input block w-full pl-7 pr-12 sm:text-sm sm:leading-5",
-  img: "rounded-md w-full object-cover",
-  button:
-    "w-full flex items-center justify-center px-8 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-500 focus:outline-none focus:shadow-outline transition duration-150 ease-in-out md:py-4 md:text-lg md:px-10",
 }
 
 const PredictionResults = ({ data }) => {
   if (data.error) return data.error
 
   return (
-    <div className="grid grid-col-3">
+    <>
       {data.result.matches.map((match) => (
-        <div className="capitalize">
-          {match.name} ({(match.value * 100).toFixed(2)}%)
+        <div key={match.name}>
+          <a
+            href={`https://www.google.com/search?q=${encodeURIComponent(match.name)}`}
+            className="capitalize underline hover:text-gray-500"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {match.name} ({(match.value * 100).toFixed(2)}%)
+          </a>
         </div>
       ))}
-    </div>
+    </>
   )
 }
