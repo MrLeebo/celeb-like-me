@@ -29,7 +29,7 @@
   "dependencies": {
     "@prisma/cli": "2.0.0-beta.3",
     "@prisma/client": "2.0.0-beta.3",
-    "blitz": "0.8.1",
+    "blitz": "0.45.3",
     "clarifai": "2.9.1",
     "got": "11.0.2",
     "react": "experimental",
